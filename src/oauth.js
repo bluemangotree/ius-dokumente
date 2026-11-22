@@ -2,7 +2,7 @@
 // die Person ist also schon angemeldet. Sie bestätigt hier, dass Claude in ihrem Namen
 // mit ihren Sichtrechten arbeiten darf. Die Token-Endpunkte stellt die OAuth-Bibliothek.
 import { anmeldung } from './zugriff.js';
-import { ladeKonfig } from './konfig.js';
+import { ladeKonfig, claudeZugang } from './konfig.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
@@ -35,6 +35,9 @@ export async function freigabe(request, env) {
   if (!oauth) return fehlerSeite('Die Verbindung zu Claude ist auf diesem Server nicht eingerichtet.', 503);
   const { person, fehler, status } = await anmeldung(request, env);
   if (!person) return fehlerSeite(fehler, status);
+  const zugang = claudeZugang(env, person.email);
+  if (!zugang) return fehlerSeite('Du darfst den Claude-Zugang dieser Instanz nicht freigeben.', 403);
+  const gemeinsam = zugang.id !== person.id;
 
   try {
     if (request.method === 'GET') {
@@ -50,11 +53,13 @@ export async function freigabe(request, env) {
         <p>${herkunft} Der Zugang geht an <strong>${esc(info.redirectHost)}</strong>.</p>
         ${info.redirectIsLoopback ? '<p class="box warn">Der Zugang geht an ein Programm auf diesem Computer. Nur fortfahren, wenn du die Verbindung gerade selbst gestartet hast.</p>' : ''}
         <div class="box">
-          <p>Angemeldet als <strong>${esc(person.name)}</strong> <small>(${esc(person.email)})</small>. Die Anwendung darf:</p>
+          <p>Angemeldet als <strong>${esc(person.name)}</strong> <small>(${esc(person.email)})</small>.
+          ${gemeinsam ? `Die Anwendung bekommt den gemeinsamen Zugang <strong>${esc(zugang.name)}</strong> und darf:` : 'Die Anwendung darf:'}</p>
           <ul>
-            <li>Dokumente in ${person.bereiche.map((b) => `„${esc(b.name)}“`).join(' und ')} sehen, lesen und suchen</li>
+            <li>Dokumente in ${zugang.bereiche.map((b) => `„${esc(b.name)}“`).join(', ').replace(/, ([^,]*)$/, ' und $1')} sehen, lesen und suchen</li>
             <li>Dokumente einordnen (Name, Kategorie, Bereich, Tags …) und Fristen setzen</li>
           </ul>
+          ${gemeinsam ? '<p><small>Wer das Claude-Konto nutzt, sieht damit alle diese Bereiche.</small></p>' : ''}
           <p><small>Löschen und Versenden ist nicht möglich. Die Verbindung lässt sich in Claude jederzeit trennen.</small></p>
         </div>
         <form method="post" action="/authorize">
@@ -76,8 +81,8 @@ export async function freigabe(request, env) {
       const ok = await oauth.approveConsent(request, handle);
       const { redirectTo } = await oauth.completeAuthorization({
         request: ok.request,
-        userId: person.id,
-        metadata: { person: person.id },
+        userId: zugang.id,
+        metadata: { freigegeben_von: person.id },
         scope: ok.request.scope,
         props: { email: person.email },
       });

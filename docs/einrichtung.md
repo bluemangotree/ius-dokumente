@@ -50,6 +50,6 @@ Ohne diese beiden Variablen antwortet die API mit „Die Anmeldung ist noch nich
    - Richtlinie: Aktion **Bypass**, Include → Everyone
    Diese Pfade schützt der Worker selbst per OAuth. `/authorize` bleibt hinter Access, dort meldet ihr euch an.
 2. In claude.ai → Einstellungen → Connectors → Benutzerdefinierten Connector hinzufügen, URL `https://<adresse>/mcp`. Beim Verbinden öffnet sich die Access-Anmeldung, danach die Freigabeseite „Claude mit Dokumente verbinden?“.
-3. Andrei und Sven verbinden jeweils mit ihrem eigenen claude.ai-Konto. Jeder sieht über Claude genau, was er in der App sieht.
+3. Andrei und Sven teilen sich ein Claude-Konto. Einer von beiden verbindet einmal, Claude bekommt dann den gemeinsamen Zugang „Claude (gemeinsam)“ mit allen drei Bereichen (`KONFIG.claude`). In der App sieht weiterhin jeder nur seine Bereiche.
 
 Zum Prüfen in Claude: „Was liegt im Dokumenten-Eingang?“

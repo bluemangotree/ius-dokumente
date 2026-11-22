@@ -4,7 +4,7 @@ Zuletzt aktualisiert: 2026-11-22. Am Ende jeder Session aktualisieren.
 
 ## Gebaut
 
-- Phase 2: MCP-Server für Claude mit OAuth (Freigabe hinter Access), Werkzeuge für Eingang, Lesen, Einordnen, Suchen und Fristen, Tabelle `fristen` (`0002`).
+- Phase 2: MCP-Server für Claude mit OAuth, als gemeinsamer Zugang mit allen Bereichen (`KONFIG.claude`), weil Andrei und Sven ein Claude-Konto teilen, (Freigabe hinter Access), Werkzeuge für Eingang, Lesen, Einordnen, Suchen und Fristen, Tabelle `fristen` (`0002`).
 - Phase 1: Schema (`0001`), Upload vom Handy nach R2, Liste mit Filtern und Suche, Detailansicht mit Bearbeiten, Anmeldung über Cloudflare Access, Sichtrechte je Bereich, Konfiguration je Instanz, PWA.
 
 ## Angelegt in Cloudflare
@@ -18,7 +18,7 @@ Es fehlen (siehe `einrichtung.md`): R2 aktivieren, Bucket anlegen, Veröffentlic
 
 ## Geprüft
 
-- `npm test`: 34 Tests, davon 9 für MCP (Werkzeuge, Sichtrechte über MCP, Suche mit Summe, Fristen).
+- `npm test`: 38 Tests, davon 13 für MCP (mit gemeinsamem Claude-Zugang) (Werkzeuge, Sichtrechte über MCP, Suche mit Summe, Fristen).
 - OAuth-Ablauf in `wrangler dev` von Anfang bis Ende: Metadaten, 401 mit Hinweis auf die Metadaten, Registrierung, Freigabeseite, Code gegen Token mit PKCE, MCP-Aufrufe mit Token, falsches Token abgelehnt.
 - Phase 1, `npm test`: 25 Tests (API, Sichtrechte, Doppelte, Dateitypen, Konfiguration, Prüfung des Access-Tokens mit echten RSA-Schlüsseln).
 - `wrangler dev` mit lokaler D1 und R2 (echte Worker-Laufzeit): Upload wird nach R2 gestreamt, Datei kommt unverändert zurück, Umlaute im Dateinamen.

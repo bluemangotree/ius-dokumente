@@ -9,3 +9,4 @@ Eine Datei je Entscheidung, Name `JJJJ-MM-TT-thema.md`. Ändert sich etwas, komm
 | 2026-11-22 | [Einordnen über Claude-Abo, nicht Workers AI](2026-11-22-claude-statt-workers-ai.md) |
 | 2026-11-22 | [Nichts löschen](2026-11-22-nichts-loeschen.md) |
 | 2026-11-22 | [Suche ohne FTS5](2026-11-22-suche-ohne-fts.md) |
+| 2026-11-22 | [Gemeinsamer Claude-Zugang](2026-11-22-gemeinsamer-claude-zugang.md) |

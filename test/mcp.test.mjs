@@ -2,7 +2,8 @@ import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { app } from '../src/app.js';
 import { mcp } from '../src/mcp.js';
-import { createDb, testEnv } from '../scripts/lokal.mjs';
+import { createDb, testEnv, KONFIG } from '../scripts/lokal.mjs';
+import { pruefeKonfig, KonfigFehler } from '../src/konfig.js';
 
 const ANDREI = { email: 'andrei@test.local' };
 const SVEN = { email: 'sven@test.local' };
@@ -170,5 +171,47 @@ describe('MCP', () => {
     const [, hinweis] = await werkzeug(ANDREI, 'dokument_lesen', { id: heic.id });
     assert.equal(hinweis.type, 'text');
     assert.match(hinweis.text, /Rückfrage/);
+  });
+});
+
+describe('Gemeinsamer Claude-Zugang (KONFIG.claude)', () => {
+  const claude = { name: 'Claude (gemeinsam)', bereiche: ['andrei', 'sven', 'gemeinsam'], freigeben: ['andrei', 'sven'] };
+  beforeEach(() => { env = testEnv(createDb(), { KONFIG: { ...KONFIG, claude } }); });
+
+  test('sieht alle Bereiche, egal wer freigegeben hat', async () => {
+    const a = await hoch({ bereich: 'andrei' });
+    const s = await hoch({ bereich: 'sven', als: 'sven@test.local' });
+    const g = await hoch({ bereich: 'gemeinsam' });
+    for (const props of [ANDREI, SVEN]) {
+      const eingang = await werkzeug(props, 'dokumente_eingang');
+      assert.deepEqual(new Set(eingang.dokumente.map((x) => x.id)), new Set([a.id, s.id, g.id]));
+    }
+    const init = await rufe(SVEN, 'initialize', {});
+    assert.match(init.result.instructions, /Claude \(gemeinsam\) \(freigegeben von sven\)/);
+    const ok = await werkzeug(ANDREI, 'dokument_einordnen', { id: s.id, kategorie: 'Arzt' });
+    assert.equal(ok.kategorie, 'Arzt');
+    const p = env.DB.sqlite.prepare("SELECT wer FROM protokoll WHERE was = 'geaendert (Claude)'").get();
+    assert.equal(p.wer, 'claude');
+  });
+
+  test('die Weboberfläche bleibt bei den eigenen Bereichen', async () => {
+    await hoch({ bereich: 'andrei' });
+    const res = await app(new Request('http://localhost/api/dokumente'), { ...env, DEV_BENUTZER: 'sven@test.local' });
+    assert.deepEqual((await res.json()).dokumente, []);
+  });
+
+  test('wer nicht freigeben darf oder aus ZUGRIFF entfernt ist, hat keinen Zugang', async () => {
+    const nurAndrei = testEnv(createDb(), { KONFIG: { ...KONFIG, claude: { ...claude, freigeben: ['andrei'] } } });
+    const res = await mcp(new Request('https://x.test/mcp', { method: 'POST', body: '{}' }), nurAndrei, SVEN);
+    assert.equal(res.status, 403);
+    const ohne = { ...env, ZUGRIFF: JSON.stringify({ 'sven@test.local': 'sven' }) };
+    assert.equal((await mcp(new Request('https://x.test/mcp', { method: 'POST', body: '{}' }), ohne, ANDREI)).status, 403);
+  });
+
+  test('Konfiguration wird geprüft', () => {
+    assert.throws(() => pruefeKonfig({ ...KONFIG, claude: { ...claude, bereiche: ['firma'] } }), KonfigFehler);
+    assert.throws(() => pruefeKonfig({ ...KONFIG, claude: { ...claude, freigeben: ['oma'] } }), KonfigFehler);
+    assert.throws(() => pruefeKonfig({ ...KONFIG, claude: { name: 'x' } }), KonfigFehler);
+    assert.throws(() => pruefeKonfig({ ...KONFIG, personen: [...KONFIG.personen, { id: 'claude', name: 'C', bereiche: ['gemeinsam'] }], claude }), KonfigFehler);
   });
 });

@@ -14,7 +14,7 @@ Eine Instanz ist ein Worker mit eigener D1, eigenem R2-Bucket und eigener Konfig
 
 | Name | Art | Inhalt |
 |---|---|---|
-| `KONFIG` | Variable in `wrangler.toml` | `name`, `bereiche` (`id`, `name`), `personen` (`id`, `name`, `bereiche`). Geprüft in `src/konfig.js` |
+| `KONFIG` | Variable in `wrangler.toml` | `name`, `bereiche` (`id`, `name`), `personen` (`id`, `name`, `bereiche`), optional `claude` (`name`, `bereiche`, `freigeben`). Geprüft in `src/konfig.js` |
 | `ZUGRIFF` | Secret | JSON: E-Mail-Adresse → Personen-id. Steht nicht im Repo, weil es öffentlich ist |
 | `ACCESS_TEAM_DOMAIN` | Variable im Dashboard | z. B. `meinteam.cloudflareaccess.com` |
 | `ACCESS_AUD` | Variable im Dashboard | Application Audience (AUD) Tag der Access-Anwendung |
@@ -34,8 +34,9 @@ Schreibende Aufrufe müssen den eigenen `Origin` tragen.
 ## Claude (MCP und OAuth)
 
 - `src/index.js` übergibt alles an `OAuthProvider` aus `@cloudflare/workers-oauth-provider`. Die Bibliothek beantwortet `/.well-known/oauth-*`, `/oauth/register` (dynamische Registrierung, wie claude.ai sie nutzt) und `/oauth/token`, und lässt `/mcp` nur mit gültigem Token durch.
-- `/authorize` (`src/oauth.js`) liegt hinter Access. Die Person ist also schon angemeldet und bestätigt auf der Freigabeseite, dass Claude in ihrem Namen arbeiten darf. Im Token steht nur ihre E-Mail.
-- `src/mcp.js` bestimmt die Person bei jedem Aufruf neu aus `ZUGRIFF`. Wer dort entfernt wird, verliert den Zugang über Claude sofort. Die Sichtrechte sind dieselben wie in der Oberfläche, weil alle Werkzeuge über `src/dokumente.js` laufen.
+- `/authorize` (`src/oauth.js`) liegt hinter Access. Die Person ist also schon angemeldet und bestätigt auf der Freigabeseite die Verbindung. Im Token steht nur ihre E-Mail.
+- Wen Claude darstellt, bestimmt `claudeZugang()` in `src/konfig.js`: Ohne `KONFIG.claude` die Person selbst. Mit `KONFIG.claude` einen eigenen Zugang `claude` mit den dort genannten Bereichen, den nur Personen aus `freigeben` verbinden dürfen. Die private Instanz nutzt das, weil Andrei und Sven ein Claude-Konto teilen (siehe `entscheidungen/2026-11-22-gemeinsamer-claude-zugang.md`). Im Protokoll steht dann `claude`.
+- `src/mcp.js` bestimmt den Zugang bei jedem Aufruf neu aus `ZUGRIFF` und `KONFIG`. Wer dort entfernt wird, sperrt auch Claude sofort. Alle Werkzeuge laufen über `src/dokumente.js` und damit über dieselbe Prüfung der Bereiche wie die Oberfläche.
 - Die Ressource-URL ist `<Adresse der Instanz>/mcp`, je Origin entsteht ein eigener Anbieter. So braucht keine Instanz ihre Adresse in der Konfiguration.
 - Access-Token gelten eine Stunde, Refresh-Token 90 Tage.
 

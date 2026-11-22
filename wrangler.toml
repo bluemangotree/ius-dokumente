@@ -40,6 +40,9 @@ personen = [
   { id = "andrei", name = "Andrei", bereiche = ["andrei", "gemeinsam"] },
   { id = "sven", name = "Sven", bereiche = ["sven", "gemeinsam"] },
 ]
+# Andrei und Sven teilen sich ein Claude-Konto. Der Connector verbindet sich deshalb als
+# gemeinsamer Zugang mit allen Bereichen, freigeben darf ihn jeder der beiden.
+claude = { name = "Claude (gemeinsam)", bereiche = ["andrei", "sven", "gemeinsam"], freigeben = ["andrei", "sven"] }
 
 # Vorlage für die SOMA-Instanz. Erst ausfüllen, wenn sie eingerichtet wird.
 # Aufruf dann mit: npx wrangler deploy --env soma

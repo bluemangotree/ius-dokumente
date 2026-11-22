@@ -17,7 +17,7 @@ Offen und erst mit echtem claude.ai prüfbar: ob claude.ai PDFs als eingebettete
 - Email Routing auf eine eigene Adresse, Email Worker legt Anhänge mit `quelle = 'mail'` und `status = 'eingang'` ab. Absender nur aus einer Erlaubnisliste. Bereich der Mail aus der Zieladresse (z. B. `andrei@`, `gemeinsam@`).
 - Der Worker stößt gebündelt (höchstens alle 15 Minuten) die geplante Claude-Aufgabe über deren API-Trigger an, dazu ein nächtlicher Lauf als Absicherung. Braucht Fire-URL und Token aus claude.ai (Secret).
 - Unklare Dokumente bekommen `status = 'rueckfrage'`, die Morgen-Zusammenfassung listet sie.
-- **Vorher klären:** Die geplante Aufgabe nutzt den Connector mit dem Konto, das sie angelegt hat, und sieht damit nur dessen Bereiche. Entweder legen Andrei und Sven je eine Aufgabe an, oder es gibt in `KONFIG` eine eigene Person „Assistent“ mit allen Bereichen und eigener E-Mail in `ZUGRIFF`.
+- Die geplante Aufgabe nutzt den gemeinsamen Claude-Zugang (`KONFIG.claude`) und ordnet damit alle Bereiche ein.
 
 ## Phase 4: Fristen, Export, Backup
 

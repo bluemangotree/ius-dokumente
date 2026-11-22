@@ -2,7 +2,7 @@
 // Die Person kommt aus dem OAuth-Token. Jede Abfrage läuft mit ihren Sichtrechten,
 // genau wie in der Weboberfläche. Es gibt kein Werkzeug zum Löschen oder Versenden.
 import * as d from './dokumente.js';
-import { personZuEmail } from './konfig.js';
+import { claudeZugang } from './konfig.js';
 
 const str = (description, extra = {}) => ({ type: 'string', description, ...extra });
 const num = (description) => ({ type: 'number', description });
@@ -167,7 +167,7 @@ async function nachricht(env, person, msg) {
         protocolVersion: VERSIONEN.includes(params?.protocolVersion) ? params.protocolVersion : VERSIONEN.at(-1),
         capabilities: { tools: {} },
         serverInfo: { name: 'dokumente', version: '1.0.0' },
-        instructions: `${ANLEITUNG}\nAngemeldet: ${person.name}. Sichtbare Bereiche: ${person.bereiche.map((b) => `${b.id} (${b.name})`).join(', ')}.`,
+        instructions: `${ANLEITUNG}\nAngemeldet: ${person.name}${person.freigegeben_von ? ` (freigegeben von ${person.freigegeben_von})` : ''}. Sichtbare Bereiche: ${person.bereiche.map((b) => `${b.id} (${b.name})`).join(', ')}.`,
       });
     case 'ping':
       return ok(id, {});
@@ -191,10 +191,10 @@ async function nachricht(env, person, msg) {
   }
 }
 
-// props stammen aus der Freigabe (siehe oauth.js). Die Person wird bei jedem Aufruf neu
-// aus ZUGRIFF bestimmt: Wer dort entfernt wird, verliert den Zugang auch über Claude sofort.
+// props stammen aus der Freigabe (siehe oauth.js). Der Zugang wird bei jedem Aufruf neu
+// aus ZUGRIFF und KONFIG bestimmt: Wer dort entfernt wird, sperrt auch Claude sofort.
 export async function mcp(request, env, props) {
-  const person = personZuEmail(env, props?.email);
+  const person = claudeZugang(env, props?.email);
   if (!person) return Response.json(fail(null, -32001, 'Kein Zugang mehr. Bitte den Connector neu verbinden.'), { status: 403 });
   if (request.method !== 'POST') return new Response('Nur POST', { status: 405, headers: { allow: 'POST' } });
   let body;
