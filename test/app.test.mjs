@@ -1,6 +1,7 @@
 import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import worker from '../src/index.js';
+import { app } from '../src/app.js';
+const worker = { fetch: app };
 import { pruefeToken, vergissSchluessel } from '../src/zugriff.js';
 import { pruefeKonfig, KonfigFehler } from '../src/konfig.js';
 import { createDb, testEnv } from '../scripts/lokal.mjs';

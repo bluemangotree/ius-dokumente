@@ -43,6 +43,13 @@ Ohne diese beiden Variablen antwortet die API mit „Die Anmeldung ist noch nich
 - Als Andrei anmelden, ein PDF in „Andrei“ hochladen. Als Sven anmelden: Das Dokument darf nicht erscheinen.
 - Auf dem Handy über „Zum Home-Bildschirm“ als App ablegen.
 
-## Später (Phase 2)
+## 5. Claude verbinden
 
-Der MCP-Server für claude.ai meldet sich per OAuth an und muss an Access vorbei erreichbar sein. Dafür kommt in Phase 2 eine zweite Access-Anwendung für die Pfade `/mcp`, `/oauth/*` und `/.well-known/*` mit der Richtlinie „Bypass“. Die Sichtrechte prüft dort der Worker selbst.
+1. Damit claude.ai den MCP-Server erreicht, braucht Access eine Ausnahme. Zero Trust → Access → Applications → Add an application → Self-hosted:
+   - Name „Dokumente für Claude“, Domain: die workers.dev-Adresse des Workers, drei Pfade: `mcp`, `oauth/*`, `.well-known/*`
+   - Richtlinie: Aktion **Bypass**, Include → Everyone
+   Diese Pfade schützt der Worker selbst per OAuth. `/authorize` bleibt hinter Access, dort meldet ihr euch an.
+2. In claude.ai → Einstellungen → Connectors → Benutzerdefinierten Connector hinzufügen, URL `https://<adresse>/mcp`. Beim Verbinden öffnet sich die Access-Anmeldung, danach die Freigabeseite „Claude mit Dokumente verbinden?“.
+3. Andrei und Sven teilen sich ein Claude-Konto. Einer von beiden verbindet einmal, Claude bekommt dann den gemeinsamen Zugang „Claude (gemeinsam)“ mit allen drei Bereichen (`KONFIG.claude`). In der App sieht weiterhin jeder nur seine Bereiche.
+
+Zum Prüfen in Claude: „Was liegt im Dokumenten-Eingang?“

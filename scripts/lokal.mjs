@@ -4,7 +4,8 @@ import { createServer } from 'node:http';
 import { readFileSync, existsSync, statSync, readdirSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { extname, join, resolve } from 'node:path';
-import worker from '../src/index.js';
+import { app } from '../src/app.js';
+const worker = { fetch: app };
 
 export function createDb(file = ':memory:') {
   const sqlite = new DatabaseSync(file);

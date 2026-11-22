@@ -11,7 +11,7 @@ workers_dev = true
 [assets]
 directory = "./public"
 binding = "ASSETS"
-run_worker_first = ["/api/*"]
+run_worker_first = ["/api/*", "/mcp", "/mcp/*", "/authorize", "/oauth/*", "/.well-known/*"]
 
 [[d1_databases]]
 binding = "DB"
@@ -24,6 +24,11 @@ binding = "DATEIEN"
 bucket_name = "dokumente"
 jurisdiction = "eu"
 
+# Speicher der OAuth-Bibliothek (Clients, Freigaben, Token als Hash) für den claude.ai-Connector.
+[[kv_namespaces]]
+binding = "OAUTH_KV"
+id = "15d396abb3bd4dbd8eb902d468b1ad15"
+
 [vars.KONFIG]
 name = "Dokumente"
 bereiche = [
@@ -35,6 +40,9 @@ personen = [
   { id = "andrei", name = "Andrei", bereiche = ["andrei", "gemeinsam"] },
   { id = "sven", name = "Sven", bereiche = ["sven", "gemeinsam"] },
 ]
+# Andrei und Sven teilen sich ein Claude-Konto. Der Connector verbindet sich deshalb als
+# gemeinsamer Zugang mit allen Bereichen, freigeben darf ihn jeder der beiden.
+claude = { name = "Claude (gemeinsam)", bereiche = ["andrei", "sven", "gemeinsam"], freigeben = ["andrei", "sven"] }
 
 # Vorlage für die SOMA-Instanz. Erst ausfüllen, wenn sie eingerichtet wird.
 # Aufruf dann mit: npx wrangler deploy --env soma
@@ -53,6 +61,10 @@ personen = [
 # binding = "DATEIEN"
 # bucket_name = "soma-dokumente"
 # jurisdiction = "eu"
+#
+# [[env.soma.kv_namespaces]]
+# binding = "OAUTH_KV"
+# id = "…"
 #
 # [env.soma.vars.KONFIG]
 # name = "SOMA Dokumente"
