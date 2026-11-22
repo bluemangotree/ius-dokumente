@@ -6,13 +6,19 @@ Stand: 2026-11-22. Je Phase ein Pull Request. Ist das Vorhaben fertig, Ergebniss
 
 Erledigt: Schema `dokumente` und `protokoll`, Upload vom Handy direkt nach R2, Liste mit Filtern und einfacher Suche, Detailansicht mit Bearbeiten, Anmeldung über Access, Sichtrechte je Bereich, Konfiguration je Instanz, PWA.
 
-## Phase 2: MCP-Server für claude.ai (dieser Stand)
+## Phase 2: MCP-Server für claude.ai (erledigt)
 
 Erledigt: OAuth mit `@cloudflare/workers-oauth-provider`, Freigabe hinter Access, Werkzeuge `dokumente_eingang`, `dokument_lesen`, `dokument_einordnen`, `dokumente_suchen`, `frist_setzen`, `fristen_anzeigen`, Tabelle `fristen`. Suche in Alltagssprache: Claude übersetzt die Frage in Filter. `export_erstellen` folgt in Phase 4.
 
 Offen und erst mit echtem claude.ai prüfbar: ob claude.ai PDFs als eingebettete Ressource an das Modell gibt. Falls nicht, liefert `dokument_lesen` PDFs künftig Seite für Seite als Bild oder Claude liest nur den Text.
 
-## Phase 3: Mail-Eingang und Anstoß für Claude
+## Phase 3: Mail-Eingang und Anstoß für Claude (dieser Stand)
+
+Erledigt: Email Worker mit Sicherung der Rohmail, Anhänge als Dokumente, Mailtext ohne Anhang als Dokument, Bereich aus der Zieladresse, erlaubte Absender, Wiederholung, Anstoß der geplanten Aufgabe alle 15 Minuten, Aufgabentext in `docs/claude-aufgabe.md`.
+
+Offen: Ob das Zerlegen großer Mails ins CPU-Limit des Gratis-Tarifs (10 ms) läuft, zeigt erst der Betrieb. Falls ja, bleibt die Rohmail gesichert und die Mail steht als Fehler im Eingang. Dann Anhänge ohne `postal-mime` mit nativem Base64 dekodieren.
+
+Ursprüngliche Planung:
 
 - Email Routing auf eine eigene Adresse, Email Worker legt Anhänge mit `quelle = 'mail'` und `status = 'eingang'` ab. Absender nur aus einer Erlaubnisliste. Bereich der Mail aus der Zieladresse (z. B. `andrei@`, `gemeinsam@`).
 - Der Worker stößt gebündelt (höchstens alle 15 Minuten) die geplante Claude-Aufgabe über deren API-Trigger an, dazu ein nächtlicher Lauf als Absicherung. Braucht Fire-URL und Token aus claude.ai (Secret).

@@ -53,3 +53,33 @@ Ohne diese beiden Variablen antwortet die API mit „Die Anmeldung ist noch nich
 3. Andrei und Sven teilen sich ein Claude-Konto. Einer von beiden verbindet einmal, Claude bekommt dann den gemeinsamen Zugang „Claude (gemeinsam)“ mit allen drei Bereichen (`KONFIG.claude`). In der App sieht weiterhin jeder nur seine Bereiche.
 
 Zum Prüfen in Claude: „Was liegt im Dokumenten-Eingang?“
+
+## 6. Mail-Eingang
+
+Email Routing braucht eine eigene Domain bei Cloudflare, mit der workers.dev-Adresse geht es nicht. **Ein bestehendes Postfach darf dabei nicht kaputtgehen.** Deshalb zuerst nachsehen: Domain → DNS → Einträge vom Typ MX.
+
+- **Die MX-Einträge zeigen auf Cloudflare** (`route1.mx.cloudflare.net` usw., Email Routing ist schon aktiv): Unter Email → Email Routing → Routing rules → Create address eine neue Adresse anlegen, z. B. `dokumente@<domain>`, Aktion **Send to a Worker**, Worker `dokumente`. Bestehende Regeln und Weiterleitungen bleiben unverändert. Für eigene Adressen je Bereich zusätzlich `andrei@…`, `sven@…` nur dann, wenn diese Adressen nicht schon für etwas anderes benutzt werden. Sonst einfach `dokumente+andrei@<domain>` verwenden: Der Teil nach `+` wählt den Bereich, dafür braucht es keine weitere Regel (Email Routing → Settings → Subaddressing einschalten).
+- **Die MX-Einträge zeigen woanders hin** (z. B. Google, IONOS, Strato): Email Routing **nicht** auf der Domain selbst aktivieren, das würde die MX-Einträge ersetzen. Stattdessen eine Subdomain nutzen, z. B. `eingang.<domain>`: Email Routing → Settings → Subdomains → hinzufügen. Cloudflare legt dann nur für die Subdomain eigene MX-Einträge an. Adresse z. B. `dokumente@eingang.<domain>`.
+
+Welche Zieladresse in welchen Bereich führt, steht in `KONFIG.mail` (`wrangler.toml`): `andrei`, `sven`, `gemeinsam` (als Adresse oder als `+Zusatz`), alles andere landet in „Gemeinsam“.
+
+Optional, aber empfohlen: erlaubte Absender festlegen. Mails von anderen Absendern werden trotzdem abgelegt, aber als Rückfrage markiert.
+
+```
+echo '["andrei@…","sven@…","@stadtwerke-beispiel.de"]' | npx wrangler secret put MAIL_ABSENDER
+```
+
+Prüfen: eine Mail mit PDF-Anhang an die neue Adresse schicken. Nach wenigen Sekunden steht das Dokument in der App, mit „per Mail“.
+
+## 7. Claude automatisch einordnen lassen
+
+1. In claude.ai unter Code → Geplante Aufgaben (claude.ai/code/routines) eine neue Aufgabe anlegen. Den Aufgabentext aus [`claude-aufgabe.md`](claude-aufgabe.md) einfügen, Connector „Dokumente“ auswählen, Zeitplan täglich früh morgens (das ist der nächtliche Lauf mit Morgen-Zusammenfassung).
+2. Im Bearbeiten-Dialog der Aufgabe unter Trigger mit **+** einen API-Trigger hinzufügen, die **Fire URL** kopieren und **Generate token** klicken. Der Token wird nur einmal angezeigt.
+3. Beides als Secrets setzen:
+
+```
+echo '<Fire URL>' | npx wrangler secret put CLAUDE_FIRE_URL
+echo '<Token>' | npx wrangler secret put CLAUDE_FIRE_TOKEN
+```
+
+Danach prüft der Worker alle 15 Minuten, ob neue Dokumente im Eingang liegen, und stößt die Aufgabe dann an (höchstens einmal je 15 Minuten). Der letzte Anstoß steht in der Tabelle `meta` (`anstoss_ergebnis`).

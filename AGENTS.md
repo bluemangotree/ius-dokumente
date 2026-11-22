@@ -36,7 +36,7 @@ Das Repo ist öffentlich. Keine E-Mail-Adressen, Schlüssel, Domains von Access-
 
 ```
 npm install
-npm test                  # Logik-, API- und MCP-Tests, braucht Node 22.5 oder neuer (node:sqlite)
+npm test                  # Logik-, API-, MCP- und Mail-Tests, braucht Node 22.5 oder neuer (node:sqlite)
 npm run lokal             # http://localhost:8787, angemeldet als andrei@test.local, Daten nur im Speicher
 BENUTZER=sven@test.local npm run lokal   # als Sven
 npm run veroeffentlichen  # Migrationen und Deploy (nur mit Wrangler-Anmeldung)
@@ -66,6 +66,8 @@ Icons neu erzeugen: `node scripts/icons.cjs` (aus `public/icons/logo.svg`).
 - Neue Pfade, die der Worker statt der Assets beantworten soll, gehören in `run_worker_first` in `wrangler.toml`.
 - `src/index.js` importiert `cloudflare:workers` (über die OAuth-Bibliothek) und läuft nicht unter Node. Tests nutzen `src/app.js` und `src/mcp.js` direkt, den OAuth-Ablauf prüft man mit `wrangler dev`.
 - Neue MCP-Werkzeuge laufen über `src/dokumente.js`, nie mit eigenem SQL, damit die Sichtrechte gelten. Kein Werkzeug darf löschen oder versenden.
+- Der Worker antwortet nie auf Mails, leitet nicht weiter und lehnt nicht ab. Der Anstoß an Claude enthält nur eine Zahl, nie Inhalte aus Dokumenten oder Mails.
+- Mails lokal testen: `npx wrangler dev`, dann `curl -X POST 'localhost:8787/cdn-cgi/handler/email?from=…&to=…' --data-binary @mail.eml` (die Mail braucht eine `Message-ID`). Zeitplan: `wrangler dev --test-scheduled`, dann `/cdn-cgi/handler/scheduled`.
 - Es gibt bewusst keinen Endpunkt zum Löschen (siehe `docs/entscheidungen/2026-11-22-nichts-loeschen.md`).
 
 ## Gestaltung

@@ -9,6 +9,8 @@ export const ERLAUBT = {
   'image/heic': 'heic',
   'image/heif': 'heif',
 };
+// Text kommt nur aus dem Mail-Eingang (Mails ohne Anhang), nie über den Upload.
+export const ENDUNG = { ...ERLAUBT, 'text/plain': 'txt' };
 export const MAX_GROESSE = 25 * 1024 * 1024;
 export const STATUS = ['eingang', 'eingeordnet', 'rueckfrage'];
 const SEITE = 50;
@@ -48,14 +50,15 @@ async function zeile(env, person, id) {
   return z;
 }
 
-export async function hochladen(env, person, { body, mime, groesse, name, bereich, sha256, quelle = 'upload' }) {
+export async function hochladen(env, person, { body, mime, groesse, name, bereich, sha256, quelle = 'upload', mailId = null, rueckfrage = null }) {
   if (!bereichIds(person).includes(bereich)) throw new Fehler(400, 'Wähle einen Bereich, den du sehen darfst.');
   const typ = String(mime || '').split(';')[0].trim().toLowerCase();
-  if (!ERLAUBT[typ]) throw new Fehler(415, 'Nur PDF und Bilder (JPEG, PNG, WebP, HEIC) sind möglich.');
+  const erlaubt = quelle === 'mail' ? ENDUNG : ERLAUBT;
+  if (!erlaubt[typ]) throw new Fehler(415, 'Nur PDF und Bilder (JPEG, PNG, WebP, HEIC) sind möglich.');
   const laenge = Number(groesse);
   if (!Number.isInteger(laenge) || laenge <= 0) throw new Fehler(411, 'Die Datei ist leer oder ihre Größe fehlt.');
   if (laenge > MAX_GROESSE) throw new Fehler(413, 'Die Datei ist größer als 25 MB. Bitte kleiner speichern.');
-  const original = sauber(name, 200) || `dokument.${ERLAUBT[typ]}`;
+  const original = sauber(name, 200) || `dokument.${erlaubt[typ]}`;
   const hash = /^[0-9a-f]{64}$/.test(sha256 || '') ? sha256 : null;
 
   if (hash) {
@@ -76,9 +79,9 @@ export async function hochladen(env, person, { body, mime, groesse, name, bereic
   const am = jetzt();
   await env.DB.batch([
     env.DB.prepare(`INSERT INTO dokumente (id, bereich, status, quelle, r2_key, original_name, mime, groesse, sha256,
-        hochgeladen_von, hochgeladen_am, geaendert_am) VALUES (?, ?, 'eingang', ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(id, bereich, quelle, key, original, typ, laenge, hash, person.id, am, am),
-    protokoll(env.DB, id, person.id, 'hochgeladen', { bereich, name: original }),
+        hochgeladen_von, hochgeladen_am, geaendert_am, mail_id, rueckfrage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(id, bereich, rueckfrage ? 'rueckfrage' : 'eingang', quelle, key, original, typ, laenge, hash, person.id, am, am, mailId, rueckfrage),
+    protokoll(env.DB, id, person.id, 'hochgeladen', { bereich, name: original, quelle, ...(mailId ? { mail: mailId } : {}) }),
   ]);
   return { doppelt: false, dokument: ausZeile(await zeile(env, person, id)) };
 }
@@ -209,13 +212,15 @@ export async function eingang(env, person, { bereich, mit_rueckfragen = true, an
   const status = mit_rueckfragen ? ['eingang', 'rueckfrage'] : ['eingang'];
   const n = Math.min(Math.max(Number(anzahl) || 20, 1), 50);
   const p = platzhalter(sicht.length);
-  const [offen, zahlen, kat, tagZeilen] = await env.DB.batch([
+  const [offen, zahlen, kat, tagZeilen, mailFehler] = await env.DB.batch([
     env.DB.prepare(`SELECT * FROM dokumente WHERE bereich IN (${p}) AND status IN (${platzhalter(status.length)})
       ORDER BY hochgeladen_am ASC, id ASC LIMIT ${n}`).bind(...sicht, ...status),
     env.DB.prepare(`SELECT status, count(*) AS anzahl FROM dokumente WHERE bereich IN (${p}) GROUP BY status`).bind(...sicht),
     env.DB.prepare(`SELECT kategorie, count(*) AS anzahl FROM dokumente WHERE bereich IN (${p}) AND kategorie IS NOT NULL
       GROUP BY kategorie ORDER BY anzahl DESC LIMIT 60`).bind(...sicht),
     env.DB.prepare(`SELECT tags FROM dokumente WHERE bereich IN (${p}) AND tags != '[]' ORDER BY geaendert_am DESC LIMIT 300`).bind(...sicht),
+    env.DB.prepare(`SELECT id, von, betreff, fehler, empfangen_am FROM mails WHERE bereich IN (${p}) AND status = 'fehler' AND versuche >= 3
+      ORDER BY empfangen_am DESC LIMIT 20`).bind(...sicht),
   ]);
   const tagZahl = new Map();
   for (const z of tagZeilen.results) {
@@ -227,6 +232,7 @@ export async function eingang(env, person, { bereich, mit_rueckfragen = true, an
     dokumente: offen.results.map((z) => kurz(ausZeile(z))),
     bekannte_kategorien: kat.results.map((z) => z.kategorie),
     bekannte_tags: [...tagZahl].sort((a, b) => b[1] - a[1]).slice(0, 60).map(([t]) => t),
+    mails_mit_fehler: mailFehler.results,
   };
 }
 

@@ -43,6 +43,13 @@ personen = [
 # Andrei und Sven teilen sich ein Claude-Konto. Der Connector verbindet sich deshalb als
 # gemeinsamer Zugang mit allen Bereichen, freigeben darf ihn jeder der beiden.
 claude = { name = "Claude (gemeinsam)", bereiche = ["andrei", "sven", "gemeinsam"], freigeben = ["andrei", "sven"] }
+# Mail-Eingang: lokaler Teil der Zieladresse oder +Zusatz → Bereich, sonst "standard".
+# Beispiel: andrei@…, dokumente+andrei@… → Andrei; dokumente@… → Gemeinsam. Die Domain steht nur im Dashboard.
+mail = { adressen = { andrei = "andrei", sven = "sven", gemeinsam = "gemeinsam" }, standard = "gemeinsam" }
+
+# Alle 15 Minuten: abgebrochene Mails nachholen und bei neuen Dokumenten Claude anstoßen.
+[triggers]
+crons = ["*/15 * * * *"]
 
 # Vorlage für die SOMA-Instanz. Erst ausfüllen, wenn sie eingerichtet wird.
 # Aufruf dann mit: npx wrangler deploy --env soma
@@ -65,6 +72,9 @@ claude = { name = "Claude (gemeinsam)", bereiche = ["andrei", "sven", "gemeinsam
 # [[env.soma.kv_namespaces]]
 # binding = "OAUTH_KV"
 # id = "…"
+#
+# [env.soma.triggers]
+# crons = ["*/15 * * * *"]
 #
 # [env.soma.vars.KONFIG]
 # name = "SOMA Dokumente"

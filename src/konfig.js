@@ -3,7 +3,8 @@
 //
 // KONFIG (öffentlich, in wrangler.toml unter [vars]):
 //   { name, bereiche: [{ id, name }], personen: [{ id, name, bereiche: [bereich-id, …] }],
-//     claude: { name, bereiche: [bereich-id, …], freigeben: [personen-id, …] } }   (claude ist optional)
+//     claude: { name, bereiche: [bereich-id, …], freigeben: [personen-id, …] },   (optional)
+//     mail: { adressen: { "<lokaler Teil oder +Zusatz>": bereich-id }, standard: bereich-id } }   (optional)
 // Mit "claude" verbindet sich der claude.ai-Connector nicht als die Person, die ihn freigibt,
 // sondern als eigener Zugang mit diesen Bereichen. Für Instanzen, deren Nutzer sich ein
 // Claude-Konto teilen: Dort sehen ohnehin beide alle Chats.
@@ -49,6 +50,13 @@ export function pruefeKonfig(k) {
     if (personen.has(CLAUDE_ID)) throw new KonfigFehler(`Die Personen-id ${CLAUDE_ID} ist für den Claude-Zugang reserviert.`);
     for (const b of c.bereiche) if (!bereiche.has(b)) throw new KonfigFehler(`KONFIG.claude: Bereich ${b} gibt es nicht.`);
     for (const p of c.freigeben) if (!personen.has(p)) throw new KonfigFehler(`KONFIG.claude: Person ${p} gibt es nicht.`);
+  }
+  if (k.mail !== undefined) {
+    const m = k.mail;
+    if (!m || typeof m !== 'object') throw new KonfigFehler('KONFIG.mail ist ungültig.');
+    for (const b of [...Object.values(m.adressen || {}), ...(m.standard ? [m.standard] : [])]) {
+      if (!bereiche.has(b)) throw new KonfigFehler(`KONFIG.mail: Bereich ${b} gibt es nicht.`);
+    }
   }
   return k;
 }
