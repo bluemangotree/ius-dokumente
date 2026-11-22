@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2A1A45">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Dokumente">
+  <title>Dokumente</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icons/logo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="kopf">
+        <h1 id="titel">Dokumente</h1>
+        <span id="wer" class="wer"></span>
+      </div>
+      <form id="suche" class="suche" role="search">
+        <input id="q" type="search" name="q" placeholder="Suchen: Absender, Name, Tag" autocomplete="off" aria-label="Dokumente durchsuchen">
+      </form>
+      <div id="filter" class="filter" aria-label="Filter"></div>
+    </header>
+    <main id="inhalt" aria-live="polite"></main>
+    <nav class="unten">
+      <label class="hinzu">
+        <input id="datei" type="file" accept="application/pdf,image/*" multiple hidden>
+        <span>Dokument hinzufügen</span>
+      </label>
+    </nav>
+  </div>
+  <div id="blatt" class="blatt" hidden></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

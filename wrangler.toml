@@ -1,0 +1,63 @@
+# Instanz "privat" für Andrei und Sven. Eine weitere Instanz (z. B. SOMA Massagen) bekommt
+# einen eigenen Abschnitt [env.<name>] mit eigenem Worker, eigener D1 und eigenem R2-Bucket,
+# siehe docs/einrichtung.md.
+name = "dokumente"
+main = "src/index.js"
+compatibility_date = "2026-06-01"
+# Im Dashboard gesetzte Variablen (ACCESS_TEAM_DOMAIN, ACCESS_AUD) beim Veröffentlichen nicht löschen.
+keep_vars = true
+workers_dev = true
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "dokumente"
+database_id = "8cce0d44-bceb-414c-acee-6c57cfaf33e3"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "DATEIEN"
+bucket_name = "dokumente"
+jurisdiction = "eu"
+
+[vars.KONFIG]
+name = "Dokumente"
+bereiche = [
+  { id = "andrei", name = "Andrei" },
+  { id = "sven", name = "Sven" },
+  { id = "gemeinsam", name = "Gemeinsam" },
+]
+personen = [
+  { id = "andrei", name = "Andrei", bereiche = ["andrei", "gemeinsam"] },
+  { id = "sven", name = "Sven", bereiche = ["sven", "gemeinsam"] },
+]
+
+# Vorlage für die SOMA-Instanz. Erst ausfüllen, wenn sie eingerichtet wird.
+# Aufruf dann mit: npx wrangler deploy --env soma
+#
+# [env.soma]
+# name = "soma-dokumente"
+# workers_dev = true
+#
+# [[env.soma.d1_databases]]
+# binding = "DB"
+# database_name = "soma-dokumente"
+# database_id = "…"
+# migrations_dir = "migrations"
+#
+# [[env.soma.r2_buckets]]
+# binding = "DATEIEN"
+# bucket_name = "soma-dokumente"
+# jurisdiction = "eu"
+#
+# [env.soma.vars.KONFIG]
+# name = "SOMA Dokumente"
+# bereiche = [{ id = "firma", name = "SOMA Massagen" }]
+# personen = [
+#   { id = "andrei", name = "Andrei", bereiche = ["firma"] },
+#   { id = "sven", name = "Sven", bereiche = ["firma"] },
+# ]

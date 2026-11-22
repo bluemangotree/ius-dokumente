@@ -1,0 +1,14 @@
+{
+  "name": "ius-dokumente",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lokal": "node --experimental-sqlite scripts/lokal.mjs",
+    "test": "node --experimental-sqlite --test test/app.test.mjs",
+    "veroeffentlichen": "wrangler d1 migrations apply dokumente --remote && wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.20.0"
+  }
+}

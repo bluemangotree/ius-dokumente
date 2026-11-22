@@ -1,0 +1,2 @@
+DEV_BENUTZER=andrei@test.local
+ZUGRIFF={"andrei@test.local":"andrei","sven@test.local":"sven"}
