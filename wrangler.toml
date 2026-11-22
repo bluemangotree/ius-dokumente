@@ -11,7 +11,7 @@ workers_dev = true
 [assets]
 directory = "./public"
 binding = "ASSETS"
-run_worker_first = ["/api/*"]
+run_worker_first = ["/api/*", "/mcp", "/mcp/*", "/authorize", "/oauth/*", "/.well-known/*"]
 
 [[d1_databases]]
 binding = "DB"
@@ -23,6 +23,11 @@ migrations_dir = "migrations"
 binding = "DATEIEN"
 bucket_name = "dokumente"
 jurisdiction = "eu"
+
+# Speicher der OAuth-Bibliothek (Clients, Freigaben, Token als Hash) für den claude.ai-Connector.
+[[kv_namespaces]]
+binding = "OAUTH_KV"
+id = "15d396abb3bd4dbd8eb902d468b1ad15"
 
 [vars.KONFIG]
 name = "Dokumente"
@@ -53,6 +58,10 @@ personen = [
 # binding = "DATEIEN"
 # bucket_name = "soma-dokumente"
 # jurisdiction = "eu"
+#
+# [[env.soma.kv_namespaces]]
+# binding = "OAUTH_KV"
+# id = "…"
 #
 # [env.soma.vars.KONFIG]
 # name = "SOMA Dokumente"

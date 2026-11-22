@@ -35,7 +35,7 @@ Das Repo ist öffentlich. Keine E-Mail-Adressen, Schlüssel, Domains von Access-
 
 ```
 npm install
-npm test                  # Logik- und API-Tests, braucht Node 22.5 oder neuer (node:sqlite)
+npm test                  # Logik-, API- und MCP-Tests, braucht Node 22.5 oder neuer (node:sqlite)
 npm run lokal             # http://localhost:8787, angemeldet als andrei@test.local, Daten nur im Speicher
 BENUTZER=sven@test.local npm run lokal   # als Sven
 npm run veroeffentlichen  # Migrationen und Deploy (nur mit Wrangler-Anmeldung)
@@ -62,6 +62,9 @@ Icons neu erzeugen: `node scripts/icons.cjs` (aus `public/icons/logo.svg`).
 - Angewendete Migrationen nie ändern, sondern eine neue anlegen.
 - Ändern sich Dateien in `SHELL`, in `public/sw.js` die Konstante `CACHE` hochzählen.
 - Text aus Dokumenten und von Nutzern in der Oberfläche immer durch `esc()`.
+- Neue Pfade, die der Worker statt der Assets beantworten soll, gehören in `run_worker_first` in `wrangler.toml`.
+- `src/index.js` importiert `cloudflare:workers` (über die OAuth-Bibliothek) und läuft nicht unter Node. Tests nutzen `src/app.js` und `src/mcp.js` direkt, den OAuth-Ablauf prüft man mit `wrangler dev`.
+- Neue MCP-Werkzeuge laufen über `src/dokumente.js`, nie mit eigenem SQL, damit die Sichtrechte gelten. Kein Werkzeug darf löschen oder versenden.
 - Es gibt bewusst keinen Endpunkt zum Löschen (siehe `docs/entscheidungen/2026-11-22-nichts-loeschen.md`).
 
 ## Gestaltung
