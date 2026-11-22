@@ -1,5 +1,5 @@
 // Hält nur die Oberfläche offline vor. Dokumente und API-Antworten laufen nie über diesen Zwischenspeicher.
-const CACHE = 'dokumente-v1';
+const CACHE = 'dokumente-v2';
 const SHELL = ['/', '/app.js', '/styles.css', '/manifest.webmanifest', '/icons/logo.svg', '/icons/icon-192.png', '/icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (event) => {

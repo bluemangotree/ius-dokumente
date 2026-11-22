@@ -5,13 +5,14 @@
   "type": "module",
   "scripts": {
     "lokal": "node --experimental-sqlite scripts/lokal.mjs",
-    "test": "node --experimental-sqlite --test test/app.test.mjs test/mcp.test.mjs",
+    "test": "node --experimental-sqlite --test test/app.test.mjs test/mcp.test.mjs test/mail.test.mjs",
     "veroeffentlichen": "wrangler d1 migrations apply dokumente --remote && wrangler deploy"
   },
   "devDependencies": {
     "wrangler": "^4.20.0"
   },
   "dependencies": {
-    "@cloudflare/workers-oauth-provider": "^1.2.4"
+    "@cloudflare/workers-oauth-provider": "^1.2.4",
+    "postal-mime": "^4.2.1"
   }
 }

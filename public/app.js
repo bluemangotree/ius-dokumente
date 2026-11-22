@@ -66,7 +66,7 @@ function karte(d) {
   const titel = d.dateiname || d.original_name;
   const zeile = [bereichName(d.bereich), d.absender, tag(d.datum || d.hochgeladen_am), euro(d.betrag_cent)].filter(Boolean);
   return `<li><a class="karte" href="#/d/${esc(d.id)}">
-    <span class="art">${d.mime === 'application/pdf' ? 'PDF' : 'Bild'}</span>
+    <span class="art">${d.mime === 'application/pdf' ? 'PDF' : d.mime === 'text/plain' ? 'Mail' : 'Bild'}</span>
     <span class="text"><strong>${esc(titel)}</strong><small>${zeile.map(esc).join(' · ')}</small></span>
     ${d.status !== 'eingeordnet' ? `<span class="status ${esc(d.status)}">${esc(STATUS[d.status])}</span>` : ''}
   </a></li>`;
@@ -192,7 +192,7 @@ async function zeigeDetail(id) {
   $('#inhalt').innerHTML = `<article class="detail">
     <a class="zurueck" href="#/">Zurück</a>
     <h2>${esc(d.dateiname || d.original_name)}</h2>
-    <p class="meta">${esc(STATUS[d.status])} · hochgeladen am ${esc(tag(d.hochgeladen_am))} · ${esc(groesse(d.groesse))}</p>
+    <p class="meta">${esc(STATUS[d.status])} · ${d.quelle === 'mail' ? 'per Mail am' : 'hochgeladen am'} ${esc(tag(d.hochgeladen_am))} · ${esc(groesse(d.groesse))}</p>
     ${d.status === 'rueckfrage' && d.rueckfrage ? `<p class="frage"><strong>Rückfrage:</strong> ${esc(d.rueckfrage)}</p>` : ''}
     ${d.zusammenfassung ? `<p>${esc(d.zusammenfassung)}</p>` : ''}
     ${vorschau}

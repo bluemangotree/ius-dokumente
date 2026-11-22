@@ -6,6 +6,7 @@
 - D1-Datenbank `dokumente` (Standort Westeuropa) für Metadaten, Schema über `migrations/`.
 - R2-Bucket `dokumente` mit EU-Jurisdiktion für die Dateien. Schlüssel: `dokumente/<id>`. Der Schlüssel ändert sich nie, auch nicht beim Umbenennen oder beim Wechsel des Bereichs. Der sprechende Name steht in D1 und wird beim Herunterladen gesetzt.
 - KV-Namespace `dokumente-oauth` (Binding `OAUTH_KV`) für die OAuth-Bibliothek: Clients, Freigaben, Token (nur als Hash).
+- Email Routing leitet Mails an den Worker (`email`), ein Zeitplan alle 15 Minuten ruft `scheduled` auf.
 - Cloudflare Access steht vor der ganzen Domain und meldet per E-Mail-Code an. Ausnahme (Bypass): `/mcp`, `/oauth/*` und `/.well-known/*`, dort prüft der Worker selbst per OAuth.
 
 ## Instanzen und Konfiguration
@@ -64,9 +65,24 @@ Schreibende Aufrufe müssen den eigenen `Origin` tragen.
 
 Erlaubt sind PDF, JPEG, PNG, WebP und HEIC bis 25 MB.
 
+## Mail-Eingang und Anstoß (`src/mail.js`, `src/anstoss.js`)
+
+1. `empfangen()` sichert die Mail unverändert in R2 (`mails/<id>.eml`) und legt eine Zeile in `mails` an. So geht nichts verloren, auch wenn das Zerlegen am CPU-Limit abbricht.
+2. `verarbeiten()` zerlegt die Mail mit `postal-mime`. Jeder Anhang vom Typ PDF oder Bild (auch PDFs als `application/octet-stream` mit Endung `.pdf`) wird ein Dokument mit `quelle = 'mail'`, `hochgeladen_von = 'mail'` und `mail_id`. Kleine eingebettete Bilder (unter 30 KB, Logos) fallen weg. Ohne passenden Anhang wird der Mailtext ein Dokument vom Typ `text/plain`. Doppelte erkennt die Prüfsumme.
+3. Bereich aus der Zieladresse (`KONFIG.mail`), Absender außerhalb von `MAIL_ABSENDER` → Status `rueckfrage`.
+4. `scheduled` (alle 15 Minuten): `nachholen()` versucht abgebrochene und fehlgeschlagene Mails erneut (höchstens drei Versuche, danach erscheinen sie in `dokumente_eingang` unter `mails_mit_fehler`). Dann `anstossen()`: Liegen Dokumente im Status `eingang`, ist seit dem letzten Anstoß etwas Neues dazugekommen und sind 15 Minuten vergangen, ruft der Worker den API-Trigger der geplanten Claude-Aufgabe auf. Der Text enthält nur die Anzahl, nie Inhalte.
+5. Der Worker antwortet nie auf Mails, leitet nicht weiter und lehnt nicht ab.
+
+| Secret | Inhalt |
+|---|---|
+| `MAIL_ABSENDER` | Optional, JSON-Liste erlaubter Absender (`"name@domain"` oder `"@domain"`) |
+| `CLAUDE_FIRE_URL` | Fire URL der geplanten Aufgabe, muss mit `https://api.anthropic.com/v1/claude_code/routines/` beginnen |
+| `CLAUDE_FIRE_TOKEN` | Token des API-Triggers |
+
 ## Datenmodell
 
 - `dokumente`: eine Zeile je Datei. `status` ist `eingang` (neu, noch nicht eingeordnet), `rueckfrage` (unklar, mit Text in `rueckfrage`) oder `eingeordnet`. „Eingang“ aus der Spezifikation ist dieser Status, kein Ordner in R2.
+- `mails` (`0003`): eine Zeile je empfangener Mail mit Status `neu`, `verarbeitet` oder `fehler`, Anzahl Versuche. `meta`: Zustandswerte wie `anstoss_zuletzt`.
 - `protokoll`: wer wann was getan hat, nur ergänzt, nie geändert. Den Volltext protokolliert es nicht, nur dass er sich geändert hat.
 - `fristen` (`0002`): Art (kuendigung, garantie, abo, versicherung, zahlung, sonstiges), Titel, `faellig_am`, `erinnern_am`, Wiederholung, Betrag, Bezug zu einem Dokument, erledigt. Sichtbar nach Bereich wie Dokumente.
 - Suche über `LIKE` statt FTS5, weil D1 Datenbanken mit virtuellen Tabellen nicht exportieren kann (siehe `entscheidungen/2026-11-22-suche-ohne-fts.md`).
@@ -79,6 +95,8 @@ Erlaubt sind PDF, JPEG, PNG, WebP und HEIC bis 25 MB.
 | `src/app.js` | Router der Oberfläche und API, Fehlerbehandlung, Dateiantwort |
 | `src/oauth.js` | Freigabeseite für den claude.ai-Connector |
 | `src/mcp.js` | MCP-Server mit den Werkzeugen für Claude |
+| `src/mail.js` | Mail-Eingang |
+| `src/anstoss.js` | Anstoß der geplanten Claude-Aufgabe |
 | `src/zugriff.js` | Prüfung des Access-Tokens, Zuordnung zur Person |
 | `src/konfig.js` | Lesen und Prüfen von `KONFIG` und `ZUGRIFF` |
 | `src/dokumente.js` | Fachlogik für Dokumente und Fristen, von Oberfläche und MCP gemeinsam genutzt |
@@ -88,4 +106,5 @@ Erlaubt sind PDF, JPEG, PNG, WebP und HEIC bis 25 MB.
 | `scripts/icons.cjs` | Erzeugt die PNG-Icons |
 | `test/app.test.mjs` | API-, Sichtrechte-, Konfigurations- und Access-Tests |
 | `test/mcp.test.mjs` | Werkzeuge, Sichtrechte über MCP, Suche, Fristen |
+| `test/mail.test.mjs` | Mail-Eingang, Wiederholung, Anstoß |
 | `test/browser.cjs` | Durchlauf im Handy-Browser |

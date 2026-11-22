@@ -7,12 +7,12 @@ const json = (daten, status = 200) => Response.json(daten, { status, headers: { 
 
 function dateiAntwort({ obj, dokument }, herunterladen) {
   const name = dokument.dateiname || dokument.original_name;
-  const endung = d.ERLAUBT[dokument.mime];
+  const endung = d.ENDUNG[dokument.mime];
   const voll = name.toLowerCase().endsWith(`.${endung}`) ? name : `${name}.${endung}`;
   const ascii = voll.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_');
   return new Response(obj.body, {
     headers: {
-      'content-type': dokument.mime,
+      'content-type': dokument.mime === 'text/plain' ? 'text/plain; charset=utf-8' : dokument.mime,
       'content-length': String(obj.size),
       'content-disposition': `${herunterladen ? 'attachment' : 'inline'}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(voll)}`,
       'x-content-type-options': 'nosniff',

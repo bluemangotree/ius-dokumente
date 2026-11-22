@@ -47,7 +47,7 @@ export function createBucket() {
     },
     async get(key) {
       const o = daten.get(key);
-      return o ? { body: new Blob([o.bytes]).stream(), size: o.bytes.byteLength, httpMetadata: o.httpMetadata } : null;
+      return o ? { body: new Blob([o.bytes]).stream(), size: o.bytes.byteLength, httpMetadata: o.httpMetadata, arrayBuffer: async () => o.bytes.slice().buffer } : null;
     },
     async delete(key) { daten.delete(key); },
   };
